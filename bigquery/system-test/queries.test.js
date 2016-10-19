@@ -13,32 +13,51 @@
 
 'use strict';
 
-var program = require('../queries');
+const path = require(`path`);
+const run = require(`../../utils`).run;
 
-var sqlQuery = 'SELECT * FROM `publicdata.samples.natality` LIMIT 5;';
+const cwd = path.join(__dirname, `..`);
+const cmd = `node queries.js`;
 
-describe('bigquery:queries', function () {
-  describe('syncQuery', function () {
-    it('should fetch data given a query', function (done) {
-      program.syncQuery(sqlQuery, function (err, data) {
-        assert.equal(err, null);
-        assert.equal(Array.isArray(data), true);
-        assert.equal(data.length, 5);
+const expectedShakespeareResult = `Query Results:
+corpus: hamlet
+unique_words: 5318
+corpus: kinghenryv
+unique_words: 5104
+corpus: cymbeline
+unique_words: 4875
+corpus: troilusandcressida
+unique_words: 4795
+corpus: kinglear
+unique_words: 4784
+corpus: kingrichardiii
+unique_words: 4713
+corpus: 2kinghenryvi
+unique_words: 4683
+corpus: coriolanus
+unique_words: 4653
+corpus: 2kinghenryiv
+unique_words: 4605
+corpus: antonyandcleopatra
+unique_words: 4582`;
 
-        done();
-      });
-    });
+const sqlQuery = `SELECT * FROM publicdata.samples.natality LIMIT 5;`;
+
+describe(`bigquery:queries`, function () {
+  it(`should query shakespeare`, () => {
+    const output = run(`${cmd} shakespeare`, cwd);
+    assert.equal(output, expectedShakespeareResult);
   });
 
-  describe('asyncQuery', function () {
-    it('should submit a job and fetch its results', function (done) {
-      program.asyncQuery(sqlQuery, function (err, data) {
-        assert.equal(err, null);
-        assert.equal(Array.isArray(data), true);
-        assert.equal(data.length, 5);
+  it(`should run a sync query`, () => {
+    const output = run(`${cmd} sync "${sqlQuery}"`, cwd);
+    assert.notEqual(output.indexOf(`Rows:`), -1);
+    assert.notEqual(output.indexOf(`source_year`), -1);
+  });
 
-        done();
-      });
-    });
+  it(`should run an async query`, () => {
+    const output = run(`${cmd} async "${sqlQuery}"`, cwd);
+    assert.notEqual(output.indexOf(`Rows:`), -1);
+    assert.notEqual(output.indexOf(`source_year`), -1);
   });
 });
